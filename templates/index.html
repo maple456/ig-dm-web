@@ -187,7 +187,13 @@
       const res = await fetch("/send_dm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: currentUser, post_url, message, count })
+        body: JSON.stringify({
+              username: document.getElementById("username").value,
+              password: document.getElementById("password").value,
+              post_url: document.getElementById("post_url").value,
+              messages: document.getElementById("message").value.split("\n"),  // 每行一則訊息
+              limit: parseInt(document.getElementById("count").value)
+        })
       });
 
       const result = await res.json();
@@ -295,3 +301,6 @@ function showToast(text, isError) {
   </script>
 </body>
 </html>
+
+
+

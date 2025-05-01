@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory
 import json
 import os
 import datetime
+from ig_dm_web_api import send_dm_real  # ← 你提供的自動私訊腳本
 
 app = Flask(__name__)
 
@@ -9,7 +10,7 @@ ACCOUNT_FILE = "accounts.json"
 RECORD_DIR = "records"
 os.makedirs(RECORD_DIR, exist_ok=True)
 
-# 初始化帳號資料
+# 初始化帳號資料（第一次啟動）
 if not os.path.exists(ACCOUNT_FILE):
     with open(ACCOUNT_FILE, "w", encoding="utf-8") as f:
         json.dump({
@@ -79,23 +80,26 @@ def delete_account():
 def send_dm():
     data = request.json
     username = data.get("username")
+    password = load_accounts().get(username)
     post_url = data.get("post_url")
     message = data.get("message")
     count = int(data.get("count", 5))
 
-    if not all([username, post_url, message]):
-        return jsonify({"status": "error", "message": "缺少必要欄位"}), 400
+    if not all([username, password, post_url, message]):
+        return jsonify({"status": "error", "message": "❗ 請填寫所有欄位"}), 400
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sent_path = os.path.join(RECORD_DIR, f"sent_users__{username}.json")
     log_path = os.path.join(RECORD_DIR, f"{username}_log.txt")
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(f"[{timestamp}] 模擬私訊 {count} 人，訊息：{message}\n")
 
-    return jsonify({"status": "success", "message": f"已記錄私訊 {count} 人內容"})
+    try:
+        result = send_dm_real(username, password, post_url, message, count, sent_path, log_path)
+        return jsonify({"status": "success", "message": result})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"❌ 發送失敗：{e}"}), 500
 
 @app.route("/log/<username>")
 def get_log(username):
-    path = os.path.join("records", f"{username}_log.txt")
+    path = os.path.join(RECORD_DIR, f"{username}_log.txt")
     if not os.path.exists(path):
         return "尚無紀錄", 404
     with open(path, "r", encoding="utf-8") as f:
@@ -103,8 +107,7 @@ def get_log(username):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_from_directory("templates", "index.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-

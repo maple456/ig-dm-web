@@ -3,7 +3,7 @@ services:
     name: ig-dm-app
     env: python
     buildCommand: ""
-    startCommand: "python app.py"
+    startCommand: "python ig_dm_api_backend.py"
     envVars:
       - key: PYTHON_VERSION
         value: 3.10

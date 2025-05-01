@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 import json
 import os
 import datetime
@@ -103,7 +103,8 @@ def get_log(username):
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
+    return render_template("index.html")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
